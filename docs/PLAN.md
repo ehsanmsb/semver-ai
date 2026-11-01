@@ -17,7 +17,7 @@ separate lifecycles: GitLab publication always requires authorized human approva
 | Phase | Deliverable / acceptance | Dependencies | State |
 |---|---|---|---|
 | P0 | Preserve specifications, assessment, execution ledger | — | Complete |
-| P1 | Go CLI, strict YAML config, defaults and validation, build tooling | P0 | Pending |
+| P1 | Go CLI, strict YAML config, defaults and validation, build tooling | P0 | Complete |
 | P2 | Deterministic SemVer, classifications, real Git history/tag/diff tests | P1 | Pending |
 | P3 | Validated AI classification, redaction, bounded context; GitLab adapter | P2 | Pending |
 | P4 | Prediction, MR analysis, candidates, freshness checks, idempotent publish | P3 | Pending |
@@ -42,6 +42,8 @@ are recorded separately; mock tests are not evidence of a live deployment.
 | Date | Phase / commit subject | Verification | Outcome |
 |---|---|---|---|
 | 2026-11-02 | P0 — `docs: record architecture and implementation plan` | Empty repository and remote inspected; GitHub login verified as ehsanmsb | Specifications and plan recorded |
+
+| 2026-11-02 | P1 — `feat: bootstrap Go CLI and strict configuration` | go test ./..., go vet ./..., go build ./..., example validation | Passed; Docker daemon is not running locally |
 
 Commit hashes can be obtained with `git log --oneline -- docs/PLAN.md`; the table
 uses exact subjects so a commit never needs to contain its own hash.
