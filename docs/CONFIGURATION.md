@@ -10,3 +10,8 @@ MVP restrictions: human approval and GitLab Release creation cannot be disabled;
 versions must be strict, stable SemVer. All five notes sections must be present,
 but their ordering is configurable. MR comments default to off.
 HTTPS is required except loopback test endpoints; URL credentials are rejected.
+
+Version selection uses the highest reachable stable SemVer tag, ignoring unrelated,
+prerelease and build-metadata tags. Pre-1.0 breaking changes bump minor by default.
+No prior tag uses initial_version exactly; docs-only changes produce no release.
+Shallow clones fail; use full history and fetch all tags.

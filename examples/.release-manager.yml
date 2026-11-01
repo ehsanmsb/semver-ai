@@ -1,0 +1,37 @@
+version: 1
+release:
+  branch: main
+  tag_prefix: v
+  initial_version: 0.1.0
+  pre_1_0:
+    breaking_change_bump: minor
+  approval:
+    required: true
+  rules:
+    performance: patch
+    docs: none
+    refactor: none
+    chore: none
+    tests: none
+analysis:
+  confidence_threshold: 0.80
+  context:
+    include_commit_messages: true
+    include_mr_description: true
+    include_repository_files: true
+  limits:
+    max_diff_bytes: 500000
+    max_context_tokens: 30000
+ai:
+  provider: openai-compatible
+  model: your-model-name
+  base_url: https://api.openai.com/v1
+  api_key_env: SEMVER_AI_API_KEY
+  timeout: 120s
+gitlab:
+  api_url: https://gitlab.com/api/v4
+  token_env: GITLAB_TOKEN
+  create_mr_comment: false
+  create_release: true
+release_notes:
+  sections: [breaking_changes, features, bug_fixes, performance, other]

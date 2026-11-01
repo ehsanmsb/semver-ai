@@ -1,7 +1,7 @@
 /bin/
 /dist/
 .env
-.release-manager.yml
+/.release-manager.yml
 semver-release-candidate.json
 RELEASE_NOTES.md
 *.test
