@@ -20,3 +20,17 @@ A failed analysis never falls back to an invented version.
 
 Release authorization and artifact integrity are documented with the publication
 milestone. A local artifact checksum alone is not an authentication mechanism.
+
+Candidates are schema-versioned, tied to the GitLab API URL/project ID/path,
+release branch, exact base/target commits, full configuration hash, and an
+expiry of seven days. Publication recalculates the version and release notes,
+checks remote branch/tag freshness and verifies final state. SHA-256 detects
+accidental corruption; it is not a signature. A writer can recompute it. Trust
+comes from protected CI configuration, restricted artifacts, and the human gate.
+
+The CLI requires a manual GitLab job on a protected ref in `production-release`,
+matching CI project/commit and local checkout. These environment checks are
+additional safeguards, not authentication. Authorized approvers, protected tags,
+environment-scoped publication credentials, and a project-wide resource group
+must be configured in GitLab. Anyone controlling the runner, CI config or token
+can bypass a local program. See GITLAB_CI.md before enabling publication.

@@ -32,3 +32,16 @@ analyzed commit. No arbitrary working-tree file is uploaded.
 API contracts: [OpenAI structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat),
 [GitLab Go client](https://gitlab.com/gitlab-org/api/client-go),
 [SemVer library](https://github.com/Masterminds/semver).
+
+Preparation requires the local configured release branch to match its remote
+head, and local stable release tags to match GitLab. Publication additionally
+checks the candidate's exact configuration hash; changing any configuration
+requires preparing a fresh candidate. Candidate validity is seven days.
+`version --build` reports the executable version without configuration;
+`version` shows the current tag and target; `predict` calculates the next version.
+
+`--output` selects the candidate path for prepare/publish and a report file for
+other commands. `--dry-run` suppresses files and remote mutations, but still
+performs analysis/validation and may incur AI cost. Publication dry runs require
+the same protected manual job context. Preparation removes previous candidate
+and notes files before attempting a new analysis, preventing stale artifact reuse.

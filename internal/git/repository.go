@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/ehsanmsb/semver-ai/internal/version"
@@ -34,7 +35,11 @@ func (b *limitedBuffer) Write(p []byte) (int, error) {
 	return b.Buffer.Write(p)
 }
 func (r Repository) run(ctx context.Context, args ...string) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", append([]string{"-c", "core.quotePath=false", "-c", "core.hooksPath=/dev/null"}, args...)...)
+	dir, e := filepath.Abs(r.Dir)
+	if e != nil {
+		return "", e
+	}
+	cmd := exec.CommandContext(ctx, "git", append([]string{"-c", "safe.directory=" + dir, "-c", "core.quotePath=false", "-c", "core.hooksPath=/dev/null"}, args...)...)
 	cmd.Dir = r.Dir
 	var out limitedBuffer
 	out.max = 20 * 1024 * 1024

@@ -112,6 +112,25 @@ func Decode(r io.Reader) (Config, error) {
 	if len(strings.TrimSpace(string(data))) == 0 {
 		return c, fmt.Errorf("config is empty")
 	}
+	var node yaml.Node
+	if err := yaml.Unmarshal(data, &node); err != nil {
+		return c, fmt.Errorf("invalid configuration YAML")
+	}
+	var check func(*yaml.Node) error
+	check = func(n *yaml.Node) error {
+		if n.Tag == "!!null" || n.Kind == yaml.AliasNode {
+			return fmt.Errorf("null values and YAML aliases are not supported")
+		}
+		for _, child := range n.Content {
+			if err := check(child); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if err := check(&node); err != nil {
+		return c, err
+	}
 	d := yaml.NewDecoder(strings.NewReader(string(data)))
 	d.KnownFields(true)
 	if err = d.Decode(&c); err != nil {
@@ -161,8 +180,8 @@ func (c Config) Validate() error {
 	if math.IsNaN(c.Analysis.Confidence) || math.IsInf(c.Analysis.Confidence, 0) || c.Analysis.Confidence <= 0 || c.Analysis.Confidence > 1 {
 		return fmt.Errorf("confidence_threshold must be > 0 and <= 1")
 	}
-	if c.Analysis.Limits.DiffBytes < 1024 || c.Analysis.Limits.DiffBytes > 10000000 || c.Analysis.Limits.ContextTokens < 2048 || c.Analysis.Limits.ContextTokens > 1000000 {
-		return fmt.Errorf("limits: diff bytes 1024..10000000; context tokens 2048..1000000")
+	if c.Analysis.Limits.DiffBytes < 1024 || c.Analysis.Limits.DiffBytes > 10000000 || c.Analysis.Limits.ContextTokens < 8192 || c.Analysis.Limits.ContextTokens > 1000000 {
+		return fmt.Errorf("limits: diff bytes 1024..10000000; context tokens 8192..1000000")
 	}
 	if c.AI.Provider != "openai-compatible" || strings.TrimSpace(c.AI.Model) == "" {
 		return fmt.Errorf("set an AI model and provider openai-compatible")

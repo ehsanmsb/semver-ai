@@ -50,7 +50,7 @@ func Impact(class string, c config.Release) (Bump, error) {
 	case "TEST":
 		rule = c.Rules.Tests
 	default:
-		return None, fmt.Errorf("unknown or uncertain classification: %s", class)
+		return None, fmt.Errorf("unknown or uncertain classification")
 	}
 	b := Bump(strings.ToUpper(rule))
 	if Rank(b) < 0 {
