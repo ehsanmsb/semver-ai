@@ -1,0 +1,59 @@
+# Merge into the consuming project's pipeline. Read docs/GITLAB_CI.md first.
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
+    - when: never
+stages: [analysis, release-preparation, release-publication]
+variables:
+  GIT_DEPTH: '0'
+.semver:
+  image:
+    name: ghcr.io/ehsanmsb/semver-ai:1
+    entrypoint: ['']
+  before_script:
+    - git fetch --tags origin
+semver-mr-analysis:
+  extends: .semver
+  stage: analysis
+  variables:
+    GITLAB_TOKEN: $SEMVER_GITLAB_READ_TOKEN
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_PROJECT_ID == $CI_PROJECT_ID'
+  script:
+    - release-manager analyze-mr --json
+semver-prepare-release:
+  extends: .semver
+  stage: release-preparation
+  variables:
+    GITLAB_TOKEN: $SEMVER_GITLAB_READ_TOKEN
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
+  script:
+    - release-manager prepare-release --json
+  artifacts:
+    paths: [semver-release-candidate.json, RELEASE_NOTES.md]
+    expire_in: 7 days
+    access: maintainer
+semver-publish-release:
+  extends: .semver
+  stage: release-publication
+  variables:
+    GITLAB_TOKEN: $SEMVER_GITLAB_PUBLISH_TOKEN
+  needs:
+    - job: semver-prepare-release
+      artifacts: true
+  environment:
+    name: production-release
+  resource_group: semver-release-publication
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
+      when: manual
+      allow_failure: true
+  script:
+    - |
+      if [ ! -f semver-release-candidate.json ]; then
+        echo 'NO_RELEASE: preparation produced no candidate'
+        exit 0
+      fi
+    - release-manager publish-release --json

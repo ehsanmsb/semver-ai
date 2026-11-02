@@ -17,7 +17,7 @@ func TestProvider(t *testing.T) {
 		name, content, finish string
 		status                int
 		wantErr               bool
-	}{{"valid", good, "stop", 200, false}, {"malformed", "oops", "stop", 200, true}, {"unknown fields", `{"changes":[],"version":"1.0.0"}`, "stop", 200, true}, {"duplicate", `{"changes":[],"changes":[]}`, "stop", 200, true}, {"incomplete", good, "length", 200, true}, {"unavailable", "secret-value", "", 503, true}} {
+	}{{"valid", good, "stop", 200, false}, {"malformed", "oops", "stop", 200, true}, {"unknown fields", `{"changes":[],"version":"1.0.0"}`, "stop", 200, true}, {"duplicate", `{"changes":[],"changes":[]}`, "stop", 200, true}, {"missing field", strings.Replace(good, `"uncertainty":""`, `"uncertainty":null`, 1), "stop", 200, true}, {"incomplete", good, "length", 200, true}, {"unavailable", "secret-value", "", 503, true}} {
 		t.Run(tc.name, func(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Header.Get("Authorization") != "Bearer test-key" || r.URL.Path != "/v1/chat/completions" {

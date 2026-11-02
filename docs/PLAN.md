@@ -21,7 +21,7 @@ separate lifecycles: GitLab publication always requires authorized human approva
 | P2 | Deterministic SemVer, classifications, real Git history/tag/diff tests | P1 | Complete |
 | P3 | Validated AI classification, redaction, bounded context; GitLab adapter | P2 | Complete |
 | P4 | Prediction, MR analysis, candidates, freshness checks, idempotent publish | P3 | Complete |
-| P5 | GitLab template, Docker, GitHub semantic releases, operational docs, checks | P4 | Pending |
+| P5 | GitLab template, Docker, GitHub semantic releases, operational docs, checks | P4 | Implemented; CI verification pending |
 
 Each implementation commit updates this file and relevant operational docs.
 Completed rows mean implementation and tests exist and were run. External checks
@@ -46,9 +46,17 @@ are recorded separately; mock tests are not evidence of a live deployment.
 | 2026-11-02 | P2 — `feat: add deterministic version engine and Git history analysis` | SemVer table tests; temporary Git repositories, annotated/unreachable tags and shallow clone tests; go vet | Passed |
 | 2026-11-02 | P3 — `feat: integrate validated AI analysis and GitLab API` | go test ./...; mocked HTTP contracts, pagination, redaction, malformed/uncertain analysis, chunk aggregation | Passed after adapting to official client v3 release commit value type |
 | 2026-11-02 | P4 — `feat: implement approved release preparation and retry-safe publication` | go test -race ./..., go vet ./..., go build ./...; lifecycle and CLI tests | Passed: tampering/staleness rejected, partial publication recovered, retries/concurrency idempotent |
+| 2026-11-02 | P5 — `ci: automate semantic releases and document deployment` | Full race tests, vet, binary build, example config, actionlint, shell/JSON checks; initial Docker build passed | Final Docker smoke test and first GitHub run being verified |
 
 Commit hashes can be obtained with `git log --oneline -- docs/PLAN.md`; the table
 uses exact subjects so a commit never needs to contain its own hash.
+
+## Remaining operator validation
+
+- Configure an approved AI model/endpoint and verify classification quality on a staging project.
+- Configure GitLab protected environment/tag permissions, scoped tokens, and CI Lint.
+- Run a staging release with an authorized approver and a denied-approver test.
+- Per-entry MR provenance for post-merge notes is a follow-up; notes currently use validated findings without invented links.
 
 ## Deferred beyond MVP
 

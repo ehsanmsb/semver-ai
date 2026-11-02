@@ -6,3 +6,5 @@ semver-release-candidate.json
 RELEASE_NOTES.md
 *.test
 coverage.out
+
+node_modules/

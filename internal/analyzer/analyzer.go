@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ehsanmsb/semver-ai/internal/ai"
 	"github.com/ehsanmsb/semver-ai/internal/config"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -15,7 +16,7 @@ var patterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?im)(["']?(?:password|passwd|secret|token|api[_-]?key|access[_-]?key|authorization)["']?\s*[:=]\s*)[^\r\n]+`),
 	regexp.MustCompile(`\b(?:sk-[A-Za-z0-9_-]{12,}|glpat-[A-Za-z0-9_-]+|gh[pousr]_[A-Za-z0-9_]+|AKIA[A-Z0-9]{16})\b`),
 	regexp.MustCompile(`(?i)bearer\s+[A-Za-z0-9._~+/-]+=*`),
-	regexp.MustCompile(`https?://[^\s/@]+:[^\s/@]+@[^\s]+`),
+	regexp.MustCompile(`(?:https?|postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis)://[^\s/@]+:[^\s/@]+@[^\s]+`),
 }
 
 func Redact(s string, secrets []string) string {
@@ -43,6 +44,12 @@ func (a Analyzer) Analyze(ctx context.Context, in ai.Request) (ai.Result, error)
 	}
 	if len(in.Files) == 0 {
 		return all, nil
+	}
+	for _, file := range in.Files {
+		name := strings.ToLower(path.Base(file))
+		if name == ".env" || strings.HasPrefix(name, ".env.") || strings.HasSuffix(name, ".pem") || strings.HasSuffix(name, ".key") || name == "id_rsa" || name == "id_ed25519" || name == "credentials" {
+			return all, fmt.Errorf("change set contains a sensitive credential file; remove it from version control before analysis")
+		}
 	}
 	in.Diff = Redact(in.Diff, a.Secrets)
 	in.Metadata = Redact(in.Metadata, a.Secrets)

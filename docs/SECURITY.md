@@ -7,6 +7,8 @@ missing evidence, unknown files, uncertainty and low confidence fail closed.
 This reduces prompt-injection risk; it cannot prove an AI classification correct.
 Review the candidate and evidence before approving publication.
 
+Credential files (`.env*`, `.pem`, `.key`, SSH private-key names and `credentials`)
+block analysis before upload; no file is silently excluded from the release range.
 Known credential values and common private-key, token, password, authorization
 and credential-bearing URL patterns are redacted before requests and artifact
 output. Pattern matching cannot identify every custom secret format. Never commit

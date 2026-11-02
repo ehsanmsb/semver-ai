@@ -75,3 +75,11 @@ func TestChunkingPreservesBreaking(t *testing.T) {
 		t.Fatal(r, e, calls)
 	}
 }
+
+func TestCredentialFileBlocksUpload(t *testing.T) {
+	a := Analyzer{Config: config.Defaults().Analysis, Provider: fake(func(ai.Request) (ai.Result, error) { t.Fatal("credential file uploaded"); return ai.Result{}, nil })}
+	_, e := a.Analyze(context.Background(), ai.Request{Files: []string{".env.production"}, Diff: "secret=custom-value"})
+	if e == nil {
+		t.Fatal("credential file accepted")
+	}
+}

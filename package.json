@@ -1,0 +1,13 @@
+{
+  "name": "semver-ai-release-tooling",
+  "private": true,
+  "description": "Development-only automation for releasing the Go CLI",
+  "devDependencies": {
+    "semantic-release": "^25.0.0",
+    "@semantic-release/commit-analyzer": "^13.0.0",
+    "@semantic-release/release-notes-generator": "^14.0.0",
+    "@semantic-release/exec": "^7.0.0",
+    "@semantic-release/github": "^12.0.0",
+    "conventional-changelog-conventionalcommits": "^8.0.0"
+  }
+}
