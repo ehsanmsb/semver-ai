@@ -131,7 +131,7 @@ func run(args []string, out, errOut io.Writer) int {
 			}
 		}
 	}
-	svc := application.Service{Config: cfg, Repo: repo, Analyzer: analyzer.Analyzer{Config: cfg.Analysis, Secrets: secrets, Provider: openai.Provider{BaseURL: cfg.AI.BaseURL, Model: cfg.AI.Model, Key: key, Timeout: cfg.AI.Timeout, MaxTokens: cfg.Analysis.Limits.ContextTokens}}}
+	svc := application.Service{Config: cfg, Repo: repo, Analyzer: analyzer.Analyzer{Config: cfg.Analysis, Secrets: secrets, Provider: openai.Provider{BaseURL: cfg.AI.BaseURL, Model: cfg.AI.Model, Key: key, Timeout: cfg.AI.Timeout, MaxTokens: cfg.Analysis.Limits.ContextTokens, MaxCompletionTokens: cfg.AI.MaxCompletionTokens}}}
 	log.Info("starting command", "command", command, "dry_run", *dry)
 	var client *gitlab.Client
 	if command != "predict" {

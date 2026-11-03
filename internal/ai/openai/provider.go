@@ -21,6 +21,7 @@ type Provider struct {
 	BaseURL, Model, Key string
 	Timeout             time.Duration
 	MaxTokens           int
+	MaxCompletionTokens int
 }
 
 func schema() map[string]any {
@@ -34,11 +35,18 @@ func (p Provider) Classify(ctx context.Context, input ai.Request) (ai.Result, er
 	if p.Key == "" {
 		return result, fmt.Errorf("AI credential is missing")
 	}
+	limit := p.MaxCompletionTokens
+	if limit == 0 {
+		limit = 4096
+	}
+	if limit < 1 || limit > 131072 {
+		return result, fmt.Errorf("invalid AI completion token limit")
+	}
 	data, e := json.Marshal(input)
 	if e != nil {
 		return result, e
 	}
-	body, e := json.Marshal(map[string]any{"model": p.Model, "messages": []map[string]string{{"role": "system", "content": prompt}, {"role": "user", "content": string(data)}}, "response_format": map[string]any{"type": "json_schema", "json_schema": map[string]any{"name": "semantic_analysis_v1", "strict": true, "schema": schema()}}, "max_completion_tokens": 4096})
+	body, e := json.Marshal(map[string]any{"model": p.Model, "messages": []map[string]string{{"role": "system", "content": prompt}, {"role": "user", "content": string(data)}}, "response_format": map[string]any{"type": "json_schema", "json_schema": map[string]any{"name": "semantic_analysis_v1", "strict": true, "schema": schema()}}, "max_completion_tokens": limit})
 	if e != nil {
 		return result, e
 	}
@@ -68,6 +76,12 @@ func (p Provider) Classify(ctx context.Context, input ai.Request) (ai.Result, er
 		return result, fmt.Errorf("AI response unreadable or too large")
 	}
 	var envelope struct {
+		Usage struct {
+			CompletionTokens *int `json:"completion_tokens"`
+			Details          struct {
+				ReasoningTokens *int `json:"reasoning_tokens"`
+			} `json:"completion_tokens_details"`
+		} `json:"usage"`
 		Choices []struct {
 			Finish  string `json:"finish_reason"`
 			Message struct {
@@ -80,8 +94,29 @@ func (p Provider) Classify(ctx context.Context, input ai.Request) (ai.Result, er
 		return result, fmt.Errorf("invalid AI completion envelope")
 	}
 	choice := envelope.Choices[0]
-	if choice.Finish != "stop" || choice.Message.Refusal != "" {
-		return result, fmt.Errorf("AI response refused or incomplete")
+	if choice.Message.Refusal != "" {
+		return result, fmt.Errorf("AI provider refused classification; no analysis accepted (refusal text omitted)")
+	}
+	switch choice.Finish {
+	case "stop":
+	case "length":
+		usage := ""
+		if n := envelope.Usage.CompletionTokens; n != nil && *n >= 0 {
+			usage += fmt.Sprintf(", completion_tokens=%d", *n)
+		}
+		if n := envelope.Usage.Details.ReasoningTokens; n != nil && *n >= 0 {
+			usage += fmt.Sprintf(", reasoning_tokens=%d", *n)
+		}
+		return result, fmt.Errorf("AI response incomplete: finish_reason=length, max_completion_tokens=%d%s; increase ai.max_completion_tokens within model limits (budget includes reasoning); no analysis accepted", limit, usage)
+	case "content_filter":
+		return result, fmt.Errorf("AI response blocked: finish_reason=content_filter; no analysis accepted")
+	case "tool_calls", "function_call":
+		return result, fmt.Errorf("AI returned an unsupported tool/function call instead of classification JSON")
+	default:
+		return result, fmt.Errorf("AI response has missing or unsupported finish_reason; check OpenAI-compatible gateway behavior")
+	}
+	if strings.TrimSpace(choice.Message.Content) == "" {
+		return result, fmt.Errorf("AI returned empty content with finish_reason=stop")
 	}
 	if e = safejson.Decode([]byte(choice.Message.Content), &result); e != nil {
 		return result, fmt.Errorf("invalid AI analysis JSON")

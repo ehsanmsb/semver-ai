@@ -28,6 +28,7 @@ ai:
   base_url: https://api.openai.com/v1
   api_key_env: SEMVER_AI_API_KEY
   timeout: 120s
+  max_completion_tokens: 4096
 gitlab:
   api_url: https://gitlab.com/api/v4
   token_env: GITLAB_TOKEN

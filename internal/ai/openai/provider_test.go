@@ -27,13 +27,50 @@ func TestProvider(t *testing.T) {
 				json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": tc.finish, "message": map[string]string{"content": tc.content}}}})
 			}))
 			defer srv.Close()
-			p := Provider{srv.URL + "/v1", "test", "test-key", time.Second, 30000}
+			p := Provider{BaseURL: srv.URL + "/v1", Model: "test", Key: "test-key", Timeout: time.Second, MaxTokens: 30000}
 			_, e := p.Classify(context.Background(), ai.Request{})
 			if (e != nil) != tc.wantErr {
 				t.Fatal(e)
 			}
 			if e != nil && strings.Contains(e.Error(), "secret-value") {
 				t.Fatal("leaked error body")
+			}
+		})
+	}
+}
+
+func TestCompletionDiagnostics(t *testing.T) {
+	for _, tc := range []struct{ name, finish, refusal, content, want string }{
+		{"length", "length", "", `{"changes":[]}`, "completion_tokens=4096, reasoning_tokens=4000"},
+		{"refusal", "stop", "SECRET refusal body", "", "provider refused"},
+		{"filter", "content_filter", "", "SECRET body", "finish_reason=content_filter"},
+		{"tool", "tool_calls", "", "SECRET body", "unsupported tool/function"},
+		{"unknown", "SECRET finish reason", "", "SECRET body", "unsupported finish_reason"},
+		{"missing", "", "", "", "unsupported finish_reason"},
+		{"empty", "stop", "", "", "empty content"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				var req map[string]any
+				if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+					t.Error(err)
+				}
+				if req["max_completion_tokens"] != float64(16384) {
+					t.Errorf("budget not forwarded: %v", req["max_completion_tokens"])
+				}
+				json.NewEncoder(w).Encode(map[string]any{
+					"choices": []any{map[string]any{"finish_reason": tc.finish, "message": map[string]string{"content": tc.content, "refusal": tc.refusal}}},
+					"usage":   map[string]any{"completion_tokens": 4096, "completion_tokens_details": map[string]int{"reasoning_tokens": 4000}},
+				})
+			}))
+			defer srv.Close()
+			p := Provider{BaseURL: srv.URL, Model: "test", Key: "key", Timeout: time.Second, MaxTokens: 30000, MaxCompletionTokens: 16384}
+			result, err := p.Classify(context.Background(), ai.Request{})
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("want %q, got %v", tc.want, err)
+			}
+			if strings.Contains(err.Error(), "SECRET") || len(result.Changes) != 0 {
+				t.Fatalf("untrusted response leaked/accepted: %v", err)
 			}
 		})
 	}

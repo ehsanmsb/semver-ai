@@ -55,11 +55,12 @@ type Analysis struct {
 	} `yaml:"limits" json:"limits"`
 }
 type AI struct {
-	Provider string        `yaml:"provider" json:"provider"`
-	Model    string        `yaml:"model" json:"model"`
-	BaseURL  string        `yaml:"base_url" json:"base_url"`
-	KeyEnv   string        `yaml:"api_key_env" json:"api_key_env"`
-	Timeout  time.Duration `yaml:"timeout" json:"timeout"`
+	MaxCompletionTokens int           `yaml:"max_completion_tokens" json:"max_completion_tokens"`
+	Provider            string        `yaml:"provider" json:"provider"`
+	Model               string        `yaml:"model" json:"model"`
+	BaseURL             string        `yaml:"base_url" json:"base_url"`
+	KeyEnv              string        `yaml:"api_key_env" json:"api_key_env"`
+	Timeout             time.Duration `yaml:"timeout" json:"timeout"`
 }
 type GitLab struct {
 	APIURL        string `yaml:"api_url" json:"api_url"`
@@ -87,7 +88,7 @@ func Defaults() Config {
 	c.Analysis.Context.Files = true
 	c.Analysis.Limits.DiffBytes = 500000
 	c.Analysis.Limits.ContextTokens = 30000
-	c.AI = AI{Provider: "openai-compatible", BaseURL: "https://api.openai.com/v1", KeyEnv: "SEMVER_AI_API_KEY", Timeout: 120 * time.Second}
+	c.AI = AI{MaxCompletionTokens: 4096, Provider: "openai-compatible", BaseURL: "https://api.openai.com/v1", KeyEnv: "SEMVER_AI_API_KEY", Timeout: 120 * time.Second}
 	c.GitLab = GitLab{APIURL: "https://gitlab.com/api/v4", TokenEnv: "GITLAB_TOKEN", Comment: false, CreateRelease: true}
 	c.ReleaseNotes.Sections = []string{"breaking_changes", "features", "bug_fixes", "performance", "other"}
 	return c
@@ -191,6 +192,9 @@ func (c Config) Validate() error {
 	}
 	if !envName.MatchString(c.AI.KeyEnv) || !envName.MatchString(c.GitLab.TokenEnv) {
 		return fmt.Errorf("invalid credential environment variable name")
+	}
+	if c.AI.MaxCompletionTokens < 1 || c.AI.MaxCompletionTokens > 131072 {
+		return fmt.Errorf("ai.max_completion_tokens must be 1..131072 (also subject to provider/model limits)")
 	}
 	if c.AI.Timeout < time.Second || c.AI.Timeout > 10*time.Minute {
 		return fmt.Errorf("AI timeout must be 1s..10m")

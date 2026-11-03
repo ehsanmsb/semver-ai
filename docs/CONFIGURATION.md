@@ -45,3 +45,22 @@ other commands. `--dry-run` suppresses files and remote mutations, but still
 performs analysis/validation and may incur AI cost. Publication dry runs require
 the same protected manual job context. Preparation removes previous candidate
 and notes files before attempting a new analysis, preventing stale artifact reuse.
+
+## Incomplete or refused AI responses
+
+`ai.max_completion_tokens` defaults to 4096 (valid range 1..131072, subject to the
+selected provider/model's own limits). This is separate from the input/context
+budget. For reasoning models the completion budget includes both reasoning and
+visible JSON output. If `finish_reason=length` is reported, raise this setting
+explicitly, for example to 16384, or reduce the analyzed scope. Higher limits can
+increase cost/latency; `ai.timeout` remains configurable (default 120s, max 10m).
+There is no automatic paid retry or silent acceptance of partial JSON.
+
+Errors now distinguish length exhaustion, refusal, content filtering, unsupported
+finish reasons, tool calls and empty content. Length errors include the configured
+limit and numeric completion/reasoning usage when returned by the provider. Raw
+response bodies, refusal text and unknown finish-reason strings are not logged.
+The old v1.0.0 message `AI response refused or incomplete` cannot identify which
+of these happened; rerun with the updated image to obtain evidence.
+
+See [the API definition of max_completion_tokens](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create).

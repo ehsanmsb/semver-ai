@@ -89,3 +89,17 @@ final implementation at `ff393843bb2e80eda94c7313b229b3a41e44076e`.
 
 Monorepos, dashboards, additional AI providers, databases, unattended GitLab
 publication, and deployment automation are outside the supplied MVP scope.
+
+## 2026-11-03 — AI completion failure diagnostics
+
+GitLab MR pipeline reached the AI provider, but v1.0.0 reported only
+`AI response refused or incomplete`. The log does not distinguish refusal from
+length exhaustion; root cause remains unconfirmed without the provider finish reason.
+
+- Add safe finish-reason diagnostics and optional numeric token usage.
+- Make the previously fixed 4096 completion-token budget configurable, keeping the default.
+- Preserve strict rejection of partial/refused responses; no automatic AI retries.
+- Commit: `fix: diagnose incomplete AI responses and configure completion budget`.
+- Verification: go test -race ./..., go vet ./..., and binary build passed. Tests distinguish truncation/refusal/filter/tool calls/empty or unsupported responses and verify configurable budget forwarding without leaking provider content.
+- User endpoint/model: internal gateway, kimi/kimi-k3.1-pro. Live finish reason remains unknown; no model compatibility assumption made.
+- Release workflow verification pending.

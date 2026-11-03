@@ -43,7 +43,7 @@ are also safely recognized by the publisher.
 - Stable versions only; prerelease/build-metadata tags are ignored.
 - Chunks preserve complete file diffs; a single oversized file fails rather than
   losing context. Increase the configured budget after reviewing input size.
-- Context tokens use a conservative byte bound; output is capped at 4096 tokens.
+- Context tokens use a conservative byte bound; completion budget defaults to 4096 tokens and is configurable via `ai.max_completion_tokens` (including reasoning tokens).
 - Repository context includes changed protobuf/SQL/OpenAPI/Swagger files; this is
   not a complete language-specific dependency or public API graph.
 - Generic secret redaction and prompt boundaries reduce risk but do not prove

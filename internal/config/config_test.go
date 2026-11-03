@@ -17,3 +17,24 @@ func TestConfig(t *testing.T) {
 		}
 	}
 }
+
+func TestCompletionBudget(t *testing.T) {
+	base := "version: 1\nai:\n  model: test\n"
+	for _, tc := range []struct {
+		suffix string
+		want   int
+		bad    bool
+	}{
+		{"", 4096, false}, {"  max_completion_tokens: 16384\n", 16384, false},
+		{"  max_completion_tokens: 0\n", 0, true}, {"  max_completion_tokens: -1\n", 0, true},
+		{"  max_completion_tokens: 131073\n", 0, true},
+	} {
+		c, e := Decode(strings.NewReader(base + tc.suffix))
+		if (e != nil) != tc.bad {
+			t.Fatalf("%s: %v", tc.suffix, e)
+		}
+		if e == nil && c.AI.MaxCompletionTokens != tc.want {
+			t.Fatal(c.AI.MaxCompletionTokens)
+		}
+	}
+}
