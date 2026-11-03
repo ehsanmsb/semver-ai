@@ -114,4 +114,8 @@ not produce a schema-conforming response on this gateway route.
 - Include the same JSON Schema explicitly in the system prompt as well as the
   API response_format; retain strict local validation and no automatic retries.
 - Commit: `fix: include classification schema in gateway prompts`.
-- Full race tests, go vet and build passed; live regression in progress. No credentials or response bodies persisted.
+- Full race tests, go vet and build passed. Live CLI prediction on the sandbox passed after explicit-schema prompting: 12 validated findings in about 130 seconds, using a 16384 completion budget and 300s timeout. No credentials or response bodies persisted.
+- Original v1.0.0 pipeline finish reason remains unknown; the observed schema mismatch and latency were reproduced separately. No tag/release was created during live tests.
+
+- Published [v1.0.2](https://github.com/ehsanmsb/semver-ai/releases/tag/v1.0.2); [workflow 41590427241](https://github.com/ehsanmsb/semver-ai/actions/runs/41590427241) passed test and release jobs. Linux amd64/arm64 image manifests verified.
+- GitLab sandbox branch updated to image 1.0.2 with default completion budget 16384 and timeout 300s; 11 Python tests passed. A new MR pipeline and approved staging publication remain operator validation.
