@@ -17,11 +17,27 @@ func TestProvider(t *testing.T) {
 		name, content, finish string
 		status                int
 		wantErr               bool
-	}{{"valid", good, "stop", 200, false}, {"malformed", "oops", "stop", 200, true}, {"unknown fields", `{"changes":[],"version":"1.0.0"}`, "stop", 200, true}, {"duplicate", `{"changes":[],"changes":[]}`, "stop", 200, true}, {"missing field", strings.Replace(good, `"uncertainty":""`, `"uncertainty":null`, 1), "stop", 200, true}, {"incomplete", good, "length", 200, true}, {"unavailable", "secret-value", "", 503, true}} {
+	}{{"valid", good, "stop", 200, false}, {"gateway wrong root", `{"files":[]}`, "stop", 200, true}, {"malformed", "oops", "stop", 200, true}, {"unknown fields", `{"changes":[],"version":"1.0.0"}`, "stop", 200, true}, {"duplicate", `{"changes":[],"changes":[]}`, "stop", 200, true}, {"missing field", strings.Replace(good, `"uncertainty":""`, `"uncertainty":null`, 1), "stop", 200, true}, {"incomplete", good, "length", 200, true}, {"unavailable", "secret-value", "", 503, true}} {
 		t.Run(tc.name, func(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Header.Get("Authorization") != "Bearer test-key" || r.URL.Path != "/v1/chat/completions" {
 					t.Error("request contract")
+				}
+				var request struct {
+					Messages []struct {
+						Content string `json:"content"`
+					} `json:"messages"`
+					Format struct {
+						Schema struct {
+							Value map[string]any `json:"schema"`
+						} `json:"json_schema"`
+					} `json:"response_format"`
+				}
+				if e := json.NewDecoder(r.Body).Decode(&request); e != nil {
+					t.Fatal(e)
+				}
+				if len(request.Messages) != 2 || !strings.Contains(request.Messages[0].Content, `"required":["changes"]`) || !strings.Contains(request.Messages[0].Content, `"additionalProperties":false`) || request.Format.Schema.Value["type"] != "object" {
+					t.Error("schema missing from prompt or structured response format")
 				}
 				w.WriteHeader(tc.status)
 				json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": tc.finish, "message": map[string]string{"content": tc.content}}}})

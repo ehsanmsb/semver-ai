@@ -46,7 +46,13 @@ func (p Provider) Classify(ctx context.Context, input ai.Request) (ai.Result, er
 	if e != nil {
 		return result, e
 	}
-	body, e := json.Marshal(map[string]any{"model": p.Model, "messages": []map[string]string{{"role": "system", "content": prompt}, {"role": "user", "content": string(data)}}, "response_format": map[string]any{"type": "json_schema", "json_schema": map[string]any{"name": "semantic_analysis_v1", "strict": true, "schema": schema()}}, "max_completion_tokens": limit})
+	responseSchema := schema()
+	schemaJSON, e := json.Marshal(responseSchema)
+	if e != nil {
+		return result, e
+	}
+	systemPrompt := prompt + "\nThe exact output schema is below. Return one object whose only top-level key is changes, never files. Do not wrap it in Markdown. Every finding must have all required fields.\n" + string(schemaJSON)
+	body, e := json.Marshal(map[string]any{"model": p.Model, "messages": []map[string]string{{"role": "system", "content": systemPrompt}, {"role": "user", "content": string(data)}}, "response_format": map[string]any{"type": "json_schema", "json_schema": map[string]any{"name": "semantic_analysis_v1", "strict": true, "schema": responseSchema}}, "max_completion_tokens": limit})
 	if e != nil {
 		return result, e
 	}

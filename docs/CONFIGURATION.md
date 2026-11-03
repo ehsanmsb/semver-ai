@@ -64,3 +64,8 @@ The old v1.0.0 message `AI response refused or incomplete` cannot identify which
 of these happened; rerun with the updated image to obtain evidence.
 
 See [the API definition of max_completion_tokens](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create).
+
+The classification schema is included in the system prompt as well as
+`response_format.json_schema` for compatible gateways that do not enforce the
+response format. Local validation remains mandatory: responses such as
+`{"files": [...]}` are rejected rather than reinterpreted as valid findings.

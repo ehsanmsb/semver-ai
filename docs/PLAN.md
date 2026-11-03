@@ -102,4 +102,16 @@ length exhaustion; root cause remains unconfirmed without the provider finish re
 - Commit: `fix: diagnose incomplete AI responses and configure completion budget`.
 - Verification: go test -race ./..., go vet ./..., and binary build passed. Tests distinguish truncation/refusal/filter/tool calls/empty or unsupported responses and verify configurable budget forwarding without leaking provider content.
 - User endpoint/model: internal gateway, kimi/kimi-k3.1-pro. Live finish reason remains unknown; no model compatibility assumption made.
-- Release workflow verification pending.
+- Release v1.0.1 published; GitHub run 41589508144 passed test and release jobs.
+
+### Gateway schema compatibility follow-up
+
+A live test on the Python sandbox returned finish_reason=stop and valid JSON,
+but used the wrong top-level key (`files` instead of `changes`). The strict
+validator correctly rejected it. Sending response_format.json_schema alone did
+not produce a schema-conforming response on this gateway route.
+
+- Include the same JSON Schema explicitly in the system prompt as well as the
+  API response_format; retain strict local validation and no automatic retries.
+- Commit: `fix: include classification schema in gateway prompts`.
+- Full race tests, go vet and build passed; live regression in progress. No credentials or response bodies persisted.
